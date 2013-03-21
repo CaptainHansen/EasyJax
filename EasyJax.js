@@ -32,12 +32,10 @@
  */
 
 function EasyJax (Url,runOnSuccess){
-  this.Url = Url;
+	this.Url = Url;
 	this.runOnSuccess = runOnSuccess;
 	this.post_obj = {};
 	this.xmlHttp;
-	
-	this.boundary = '--__generic_boundary--';
 	
   /** submit_data
    * generates the xmlHttp request, creates a callback function, formats the data to be submitted as a JSON string,
@@ -56,9 +54,8 @@ function EasyJax (Url,runOnSuccess){
 		this.xmlHttp.onreadystatechange = this.createCallback();
 
 		this.xmlHttp.open( "POST", this.Url, true );
-		this.xmlHttp.setRequestHeader("Content-Type","multipart/form-data; boundary=\""+this.boundary+"\"; charset=ISO-8859-1");
-		var pdata = this.getPostBody();
-		this.xmlHttp.send( pdata );
+		this.xmlHttp.setRequestHeader("Content-Type","application/json; charset=UTF-8");
+		this.xmlHttp.send( JSON.stringify(this.post_obj) );
 	}
 
   /** createCallback
@@ -93,15 +90,5 @@ function EasyJax (Url,runOnSuccess){
    */
 	this.set_send_data = function(name,value){
 		this.post_obj[name] = value;
-	}
-	
-  /** getPostBody
-   * creates a JSON string from the post_obj variable within this class.  only used in submit_data
-   */
-	this.getPostBody = function(){
-		var body='--'+this.boundary+'\r\n';
-		body += "Content-Disposition: form-data; name=\"" + "JSON_data" + "\"\r\n\r\n"
-		body += JSON.stringify(this.post_obj) + "\r\n";
-		return body;
 	}
 }
