@@ -43,11 +43,9 @@ class EasyJax {
 		$this -> return_data = array();
 		$this -> return_data['error'] = "";
 		$this -> mysqli_inst = $mysqli_inst;
-		if(isset($_REQUEST['JSON_data'])){
-			$this -> json_data = json_decode($_REQUEST['JSON_data'],1);
-		} else {
-			$this -> json_data = array();
-		}
+		
+		$data_in = file_get_contents("php://input");
+		$this -> json_data = json_decode($data_in,1);
 	}
 	
 	public function get_send_data($key=null){
@@ -72,6 +70,7 @@ class EasyJax {
 		if($error != ""){
 			$this -> add_error_msg($error);
 		}
+		header("Content-type: application/json");
 		echo json_encode($this->return_data);
 		die;
 	}
