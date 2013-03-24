@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE. 
  */
 
+<<<<<<< HEAD:EasyJax.js
 
 /** EasyJax Javascript class
  *
@@ -31,11 +32,12 @@
  * it is announced using the alert() function
  */
 
-function EasyJax (Url,runOnSuccess){
+function EasyJax (Url,req_type,runOnSuccess){
 	this.Url = Url;
 	this.runOnSuccess = runOnSuccess;
 	this.post_obj = {};
 	this.xmlHttp;
+	this.req_type = req_type;
 	
   /** submit_data
    * generates the xmlHttp request, creates a callback function, formats the data to be submitted as a JSON string,
@@ -48,46 +50,49 @@ function EasyJax (Url,runOnSuccess){
 			this.xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
 		}
 	
-		//this was a version of ProcessRequest in v1 (input variable named "p_func").
-		//Write function whose name is contained in data.runOnSuccess and place in a javascript for the client.
 		//data is a JSON data package returned to the client from the server.
 		this.xmlHttp.onreadystatechange = this.createCallback();
 
-		this.xmlHttp.open( "POST", this.Url, true );
-		this.xmlHttp.setRequestHeader("Content-Type","application/json; charset=UTF-8");
+		this.xmlHttp.open( this.req_type, this.Url, true );
+		this.xmlHttp.setRequestHeader("Content-Type","application/json; charset=ISO-8859-1");
 		this.xmlHttp.send( JSON.stringify(this.post_obj) );
 	}
-
-  /** createCallback
-   * returns a callback function which handels error conditions and success conditions (status == 200, not 404, or 500)
-   */
+	
 	this.createCallback = function (){
 		var x = this.xmlHttp;
 		var ros = this.runOnSuccess;
 		return function (){
-			if ( x.readyState == 4 && x.status == 200 ) {
-				try {
-					var data = JSON.parse(x.responseText);
-				} catch(err){
-					alert("There was an error parsing JSON data.  Response Text shown below:\n\n"+x.response);
-					return 1;
-				}
-				if(data.error != "" && data.error != undefined){
-					alert(data.error);
-					return 1;
-				} else if(ros) {
-					eval(ros)(data);
-					return 0;
-				} else {
-					alert(ros);
+			if(x.readyState == 4) {
+				switch(x.status) {
+				case 200:
+					try {
+						var data = JSON.parse(x.responseText);
+					} catch(err){
+						alert("There was an error parsing JSON data.  Response Text shown below:\n\n"+x.response);
+						return 1;
+					}
+					if(data.error != "" && data.error != undefined){
+						alert(data.error);
+						return 1;
+					} else if(ros) {
+						eval(ros)(data);
+						return 0;
+					} else {
+						alert(ros);
+					}
+					break;
+				case 500:
+					alert("Status code 500 - Internal Server Error.");
+					break;
+				case 404:
+					alert("Status code 404 - Destination script not found");
+					break;
 				}
 			}
 		}
 	}
+		
 
-  /** set_send_data
-   * call this method to add data to be sent to the server
-   */
 	this.set_send_data = function(name,value){
 		this.post_obj[name] = value;
 	}

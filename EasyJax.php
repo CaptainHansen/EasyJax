@@ -1,4 +1,5 @@
 <?
+
 /*
  * Copyright (c) 2013 Stephen Hansen (www.hansencomputers.com)
  * 
@@ -24,31 +25,27 @@
  * OTHER DEALINGS IN THE SOFTWARE. 
  */
 
-/** EasyJax public class
- * Written by Stephen Hansen,  2013
- * Used to assist with data exchange between client and server using JSON to transfer data.
- * This class has been fully tested using the mysqli object.  Feel free to use it with the SQL object of your choice.
- * This class can easily be used without any SQL object to return the JSON data that was submitted.
- *
- * When finished processing the request, call the send_resp method (with an optional error message) to send data back to the client
- * error messages can be added using add_error_msg.  Data to be returned to the client can be set using set_ret_data
- */
+//* EasyJax public class
+//* Written by Stephen Hansen, Copyright of Hansen Computers LLC,  2013
+//* Used to assist with data exchange between client and server using JSON to transfer data.
 
 class EasyJax {
-  private $return_data;
+	private $return_data;
 	protected $mysqli_inst;
 	protected $json_data;
+	public $path;
 	
-	public function __construct($mysqli_inst="not_here"){
+	public function __construct(\mysqli $mysqli_inst=NULL){
+		if(isset($_SERVER['PATH_INFO'])){
+			$this -> path = $_SERVER['PATH_INFO'];
+		}
 		$this -> return_data = array();
 		$this -> return_data['error'] = "";
 		$this -> mysqli_inst = $mysqli_inst;
-		
-		$data_in = file_get_contents("php://input");
-		$this -> json_data = json_decode($data_in,1);
+		$this -> json_data = json_decode(file_get_contents("php://input"),1);
 	}
 	
-	public function get_send_data($key=null){
+	public function getData($key=null){
 		if($key === null){
 			return $this -> json_data;
 		} else {
@@ -70,7 +67,7 @@ class EasyJax {
 		if($error != ""){
 			$this -> add_error_msg($error);
 		}
-		header("Content-type: application/json");
+		header("Content-type: application/json; charset=UTF-8");
 		echo json_encode($this->return_data);
 		die;
 	}
