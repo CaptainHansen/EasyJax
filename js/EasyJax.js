@@ -23,8 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE. 
  */
 
-<<<<<<< HEAD:EasyJax.js
-
 /** EasyJax Javascript class
  *
  * instantiate this class with the URL to post data to (PHP script using the EasyJax PHP class)
