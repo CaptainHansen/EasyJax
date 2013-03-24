@@ -31,15 +31,13 @@ namespace EasyJax;
 //* Simplifies Reads, Writes, and Deletes to MySQL database entries from a simple AJAX request
 
 class MySQL extends \EasyJax {
-	private $submitted_data;
 	public $type;
 	private $id;
 	private $db;	//this is actually the table name that will be edited
 	
 	public function __construct(\mysqli $mysqli,$db,$text_ids=array(),$checkboxes=array()){
 		parent::__construct($mysqli);
-		$all_sent = $this -> json_data;	///this is sent directly from HCI_v1.js (decoded from JSON in parent class)
-		$this -> submitted_data = $all_sent;
+		
 		$this -> db = $db;
 
 		$this -> set_type_and_id($_SERVER['REQUEST_METHOD'],intval(basename($_SERVER['PATH_INFO'])));
@@ -78,8 +76,10 @@ class MySQL extends \EasyJax {
 	}
 	
 	/***START OF Getters and Setters***/
-	public function set_data($key,$data){
-		$this -> submitted_data[$key] = $data;
+	//getData already defined in parent class
+	
+	public function setData($key,$data){
+		$this -> json_data[$key] = $data;
 		return true;
 	}
 	
@@ -91,16 +91,16 @@ class MySQL extends \EasyJax {
 	
 	private function escape_text($text_ids){
 		foreach($text_ids as $id => $tid){
-			$this -> submitted_data[$tid] = preg_replace('/\'/','\\\'',preg_replace('/&#039;/','\'',($this -> submitted_data[$tid])));
-			if($this -> submitted_data[$tid] == null) unset($this-> submitted_data[$tid]);
+			$this -> json_data[$tid] = preg_replace('/\'/','\\\'',preg_replace('/&#039;/','\'',($this -> json_data[$tid])));
+			if($this -> json_data[$tid] == null) unset($this-> json_data[$tid]);
 		}
 	}
 	
 	private function check_checkboxes($checkboxes){
 		foreach($checkboxes as $id => $checkbox){
-			if(isset($this->submitted_data[$checkbox])){
-				if($this -> submitted_data[$checkbox] !== "true"){
-					$this -> submitted_data[$checkbox] = 'false';
+			if(isset($this->json_data[$checkbox])){
+				if($this -> json_data[$checkbox] !== "true"){
+					$this -> json_data[$checkbox] = 'false';
 				}
 			}
 		}
@@ -165,7 +165,7 @@ class MySQL extends \EasyJax {
 			case 'GET': return "SELECT * FROM $db WHERE ID = ".($this->id);
 		}
 		$first=true;
-		foreach($this -> submitted_data as $field => $value){
+		foreach($this -> json_data as $field => $value){
 			if(!$first){
 				$sql.=", ";
 			} else {
