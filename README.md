@@ -24,6 +24,6 @@ A simple implementation of an AJAX echo is as easy as this:
 
 	include("/path/to/autoload.php"); 
 
-	$easyj = new EasyJax\JSON();
+	$easyj = new EasyJax();
 	$easyj -> set_ret_data("returned_text",$easyj -> getData('echo_me'));
 	$easyj -> send_resp();
