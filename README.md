@@ -9,21 +9,25 @@ A simple implementation of an AJAX echo is as easy as this:
 
 ##Client Side##
 
-	function save_data(text_to_echo){
-		//last argument in constructor is a callback function which is called if the EasyJax server-side script returns a 200 status code
-		easyj = new EasyJax('/easyjax.php','POST',function(data) {
-			alert(data.returned_text);
-		});
+```javascript
+function save_data(text_to_echo){
+	//last argument in constructor is a callback function which is called if the EasyJax server-side script returns a 200 status code
+	easyj = new EasyJax('/easyjax.php','POST',function(data) {
+		alert(data.returned_text);
+	});
 
-		easyj.set_send_data('echo_me',text_to_echo);
+	easyj.set_send_data('echo_me',text_to_echo);
 
-		easyj.submit_data();
-	}
+	easyj.submit_data();
+}
+```
 
 ##Server Side##
 
-	include("/path/to/autoload.php"); 
+```php
+include("/path/to/autoload.php"); 
 
-	$easyj = new EasyJax();
-	$easyj -> set_ret_data("returned_text",$easyj -> getData('echo_me'));
-	$easyj -> send_resp();
+$easyj = new EasyJax();
+$easyj -> set_ret_data("returned_text",$easyj -> getData('echo_me'));
+$easyj -> send_resp();
+```
