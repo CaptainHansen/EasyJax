@@ -40,13 +40,17 @@ class MySQL extends \EasyJax {
 		
 		$this -> db = $db;
 
-		$this -> set_type_and_id($_SERVER['REQUEST_METHOD'],intval(basename($_SERVER['PATH_INFO'])));
+		if(isset($_SERVER['PATH_INFO'])){
+			$this -> set_type_and_id($_SERVER['REQUEST_METHOD'],intval(basename($_SERVER['PATH_INFO'])));
+		} else {
+			$this -> set_type_and_id($_SERVER['REQUEST_METHOD']);
+		}
 		
 		$this -> escape_text($text_ids);
 		$this -> check_checkboxes($checkboxes);
 	}
 	
-	private function set_type_and_id($type,$id){
+	private function set_type_and_id($type,$id=0){
 		$mysqli = $this -> mysqli_inst;
 		$this -> type = $type;
 		
@@ -75,6 +79,11 @@ class MySQL extends \EasyJax {
 		}
 	}
 	
+	//This method does alter the database in any way, it just reports to the client what its going to do.
+	public function test(){
+		$this -> send_resp("Method type: {$this->type}\nID (if needed): {$this->id}\nSQL string: ".$this->SQL_get_string());
+	}
+	
 	/***START OF Getters and Setters***/
 	//getData already defined in parent class
 	
@@ -91,8 +100,10 @@ class MySQL extends \EasyJax {
 	
 	private function escape_text($text_ids){
 		foreach($text_ids as $id => $tid){
-			$this -> json_data[$tid] = preg_replace('/\'/','\\\'',preg_replace('/&#039;/','\'',($this -> json_data[$tid])));
-			if($this -> json_data[$tid] == null) unset($this-> json_data[$tid]);
+			if(isset($this->json_data[$tid])){
+				$this -> json_data[$tid] = preg_replace('/\'/','\\\'',preg_replace('/&#039;/','\'',($this -> json_data[$tid])));
+				if($this -> json_data[$tid] == null) unset($this-> json_data[$tid]);
+			}
 		}
 	}
 	
@@ -145,7 +156,7 @@ class MySQL extends \EasyJax {
 		///////loading a record
 		case 'GET':
 			if($res = $mysqli->query($sql)){
-				$this -> set_ret_data('ID',$this -> db);
+				$this -> set_ret_data('ID',$this -> id);
 				$this -> set_ret_data('data',$res->fetch_assoc());
 			} else {
 				$this -> add_error_msg("Error loading from ".$this->db." ID # ".$this->id);
@@ -171,7 +182,9 @@ class MySQL extends \EasyJax {
 			} else {
 				$first=false;
 			}
-			if($value == "true") {
+			if(is_int($value)){
+				$sql.="$field = $value";
+			} elseif($value == "true") {
 				$sql.="$field = true";
 			} elseif($value == "false") {
 				$sql.="$field = false";
