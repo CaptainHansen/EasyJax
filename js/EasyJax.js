@@ -30,35 +30,40 @@
  * it is announced using the alert() function
  */
 
-function EasyJax (Url,req_type,runOnSuccess){
+function EasyJax (Url,req_type,runOnSuccess,post_obj){
 	this.Url = Url;
 	this.runOnSuccess = runOnSuccess;
-	this.post_obj = {};
+	if(post_obj == undefined){
+		this.post_obj = {};
+	} else {
+		this.post_obj = post_obj;
+	}
 	this.xmlHttp;
 	this.req_type = req_type;
 	
-  /** submit_data
-   * generates the xmlHttp request, creates a callback function, formats the data to be submitted as a JSON string,
-   * and posts the data to the server
-   */
-	this.submit_data = function(){
+	this.submit_data = function (){
 		if(window.XMLHttpRequest) {
 			this.xmlHttp = new XMLHttpRequest(); 
 		} else {
 			this.xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
 		}
-	
+
 		//data is a JSON data package returned to the client from the server.
 		this.xmlHttp.onreadystatechange = this.createCallback();
 
 		this.xmlHttp.open( this.req_type, this.Url, true );
 		this.xmlHttp.setRequestHeader("Content-Type","application/json; charset=ISO-8859-1");
-		this.xmlHttp.send( JSON.stringify(this.post_obj) );
+		this.xmlHttp.send(JSON.stringify(this.post_obj));
+	}
+	
+	this.set_send_data = function(id,val){
+		this.post_obj[id] = val;
 	}
 	
 	this.createCallback = function (){
 		var x = this.xmlHttp;
 		var ros = this.runOnSuccess;
+		var pobj = this.post_obj;
 		return function (){
 			if(x.readyState == 4) {
 				switch(x.status) {
@@ -73,7 +78,7 @@ function EasyJax (Url,req_type,runOnSuccess){
 						alert(data.error);
 						return 1;
 					} else if(ros) {
-						eval(ros)(data);
+						eval(ros)(data,pobj);
 						return 0;
 					} else {
 						alert(ros);
@@ -85,13 +90,14 @@ function EasyJax (Url,req_type,runOnSuccess){
 				case 404:
 					alert("Status code 404 - Destination script not found");
 					break;
+				case 401:
+					alert("Status code 401 - You are no longer logged in.  Please log back in and try again.");
+					break;
+				case 403:
+					alert("Status code 403 - Access Denied");
+					break;
 				}
 			}
 		}
-	}
-		
-
-	this.set_send_data = function(name,value){
-		this.post_obj[name] = value;
 	}
 }
