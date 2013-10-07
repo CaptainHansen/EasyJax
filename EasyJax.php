@@ -34,11 +34,13 @@ class EasyJax {
 	protected $mysqli_inst;
 	protected $json_data;
 	public $path;
+	public $req_method;
 	
 	public function __construct(\mysqli $mysqli_inst=NULL){
 		if(isset($_SERVER['PATH_INFO'])){
 			$this -> path = $_SERVER['PATH_INFO'];
 		}
+		$this -> req_method = strtoupper($_SERVER['REQUEST_METHOD']);
 		$this -> return_data = array();
 		$this -> return_data['error'] = "";
 		$this -> mysqli_inst = $mysqli_inst;
