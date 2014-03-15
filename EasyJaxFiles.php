@@ -24,45 +24,72 @@
  * OTHER DEALINGS IN THE SOFTWARE. 
  */
 
-//* EasyJax public class
+//* EasyJaxFiles public class
 //* Written by Stephen Hansen, Copyright of Hansen Computers LLC,  2013
-//* Used to assist with data exchange between client and server using JSON to transfer data.
+//* Used to Upload data from a browser to the server asynchronously.
 
-class EasyJax {
+class EasyJaxFiles {
 	private $return_data;
-	protected $json_data;
 	public $path = false;
 	public $req_method;
+
+	public $exts = array();
+	
+	private $read;
+	private $write;
+	private $overw;
 	
 	public function __construct(){
-		if(isset($_SERVER['PATH_INFO'])){
-			$this -> path = $_SERVER['PATH_INFO'];
-		}
+		$this -> path = $_SERVER['PATH_INFO'];
 		$this -> req_method = strtoupper($_SERVER['REQUEST_METHOD']);
 		$this -> return_data = array();
 		$this -> return_data['error'] = "";
-		$jtext = file_get_contents("php://input");
-		$this -> json_data = json_decode($jtext,1);
 	}
 	
-	public function getData($key=null){
-		if($key === null){
-			return $this -> json_data;
+	public function downloadTo($folder = "/tmp"){
+		$dloc = $folder.$this -> path;
+		$dest = dirname($dloc);
+
+		$this -> read = fopen('php://input', "r");
+		$this -> set_ret_data('name',basename($this -> path));
+		
+		if(!is_dir($dest)){
+			$this -> add_error_msg("Destination folder does not exist.");
+			return false;
+		}
+		
+		if(file_exists($dloc)){
+			$this -> set_ret_data('overw',true);
 		} else {
-			if(isset($this -> json_data[$key])){
-				return $this -> json_data[$key];
-			} else {
-				return false;
+			$this -> set_ret_data('overw',false);
+		}
+		if(isset($_SERVER['HTTP_EJF_SEGMENT'])){
+			if($_SERVER['HTTP_EJF_SEGMENT'] == 1) {
+				unlink($dloc);
 			}
+			$this -> write = fopen($dloc,'a');
+		} else {
+			$this -> write = fopen($dloc,'w');
 		}
-	}
-	
-	public function setData($key,$val){
-		if(!isset($this -> json_data[$key])){
-			$this -> json_data[$key] = $val;
-			return true;
+		if(!$this -> write) {
+			$this -> add_error_msg("Cannot open a write handle.");
+			return false;
 		}
-		return false;
+		
+		while(true) {
+			$buffer = fgets($this -> read, 4096);
+			if (strlen($buffer) == 0) {
+				fclose($this -> read);
+				fclose($this -> write);
+				break;
+			}
+			fwrite($this -> write, $buffer);
+		}
+		if($_SERVER['HTTP_EJF_FINAL'] == 'YES'){
+			return $dloc;
+		} else {
+			$this -> send_resp();	//stop execution here if file is segmented and this is not the last one!!!
+		}
 	}
 	
 	public function set_ret_data($key,$data){
@@ -80,14 +107,11 @@ class EasyJax {
 			$this -> add_error_msg($error);
 		}
 		header("Content-type: application/json; charset=UTF-8");
-		$send = json_encode($this -> return_data);
 		header("Pragma: no-cache");
 		header("Expires: Thu, 01 Dec 1997 16:00:00 GMT");
-		echo $send;
+		echo json_encode($this->return_data);
 		die;
 	}
-	
-	
 	
 	public function send_if_error(){
 		if($return_data['error'] != ""){

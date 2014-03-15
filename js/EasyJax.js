@@ -40,6 +40,8 @@ function EasyJax (Url,req_type,runOnSuccess,post_obj){
 	}
 	this.xmlHttp;
 	this.req_type = req_type;
+	this.aes = false;
+	this.enc;
 	
 	this.submit_data = function (){
 		if(window.XMLHttpRequest) {
@@ -61,6 +63,7 @@ function EasyJax (Url,req_type,runOnSuccess,post_obj){
 	}
 	
 	this.createCallback = function (){
+		var aes = this.aes;
 		var x = this.xmlHttp;
 		var ros = this.runOnSuccess;
 		var pobj = this.post_obj;
@@ -68,12 +71,18 @@ function EasyJax (Url,req_type,runOnSuccess,post_obj){
 			if(x.readyState == 4) {
 				switch(x.status) {
 				case 200:
+					var response = x.response;
 					try {
-						var data = JSON.parse(x.responseText);
+						var data = JSON.parse(response);
 					} catch(err){
-						alert("There was an error parsing JSON data.  Response Text shown below:\n\n"+x.response);
+						if(aes != false){
+							alert("There was an error decrypting and/or parsing response.\n\n"+x.response);
+						} else {
+							alert("There was an error parsing JSON data.  Response Text shown below:\n\n"+x.response);
+						}
 						return 1;
 					}
+
 					if(data.error != "" && data.error != undefined){
 						alert(data.error);
 						return 1;
@@ -96,6 +105,8 @@ function EasyJax (Url,req_type,runOnSuccess,post_obj){
 				case 403:
 					alert("Status code 403 - Access Denied");
 					break;
+				default:
+					alert("Status code "+x.status+" - Unknown status.");
 				}
 			}
 		}
