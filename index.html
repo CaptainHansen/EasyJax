@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>EasyJax and EasyJaxFiles Test</title>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js" ></script>
+<script type="text/javascript" src="js/EasyJaxFiles.js"></script>
+<script type="text/javascript" src="js/EasyJax.js"></script>
+<script type="text/javascript">
+<!--
+function send_data(id){
+	//last argument in constructor is a callback function which is called if the EasyJax server-side script returns a 200 status code
+	easyj = new EasyJax('tests/echo.php','POST',function(data) {
+		alert(data.returned_text);
+	},{'echo_me':$('#'+id).val()});
+
+	easyj.submit_data();
+}
+
+function buttonClick(){
+	$('#files').trigger('click');
+}
+
+$(document).ready(function(){
+	$('#btn').click(buttonClick);
+	$('#files').change(function(){
+		ejf = new EasyJaxFiles('tests/upload.php','POST',$('#files')[0].files);
+		ejf.on('start',function(){
+			$('#btn').off('click');
+			$('#results').html('');
+			$('#results').append('<div style="text-align: center;"><div id="allprogress">Process Initiated</div></div>');
+		}).on('nextfile',function(){
+			$('#results').append('<div class="file">File Upload Starting</div>');
+		}).on('progress',function(s,file){
+			$('.file:last').html('File "'+file.name+'" - '+s.percent.toFixed(0)+'% Complete');
+			$('#allprogress').html(s.overallPercent.toFixed(0)+'% complete - '+s.current_file+' of '+s.num_files+' Uploaded');
+		}).on('success',function(data){
+			$('.file:last').html('File "'+data.name+'" Uploaded Successfully!');
+			$('#allfiles').append("<div class='fname'>"+data.name+"</div>");
+		}).on('error',function(data){
+			$('.file:last').html('File "'+data.name+'" Not Uploaded! - '+data.error);
+		}).on('finish',function(){
+			$('#allprogress').html('Process Complete!');
+			$('#btn').click(buttonClick);
+		});
+		ejf.upload();
+	});
+});
+-->
+</script>
+</head>
+<body>
+
+<h1>EasyJax Test</h1>
+<input type="text" id="ej_text">
+<button onclick="send_data('ej_text');">Send!</button>
+
+<h1>EasyJaxFiles Test</h1>
+<div style="width: 0; height: 0; position: absolute;"><input type="file" id="files" multiple="multiple"></div>
+<button id="btn">Upload Files</button>
+<div id="allfiles"></div>
+<div id="results"></div>
+
+</body>
+</html>
