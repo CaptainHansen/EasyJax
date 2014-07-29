@@ -3,7 +3,7 @@ EasyJax
 
 Easy-to-use OO implementation of AJAX.  The goal of this tool is to simplify the process of exchanging data between a web browser and a server.
 
-This code can be used by adding the EasyJax.js file in the js folder to a directory accessible via a web server and simply including the autoload.php script in a php script pointed to with the AJAX request.
+This code can be used by adding the EasyJax.js file in the "client" folder to a directory accessible via a web server and simply including the autoload.php script in a php script pointed to with the AJAX request.
 
 A simple implementation of an AJAX echo is as easy as this:
 
@@ -23,7 +23,7 @@ function send_data(text_to_echo){
 ##Server Side##
 
 ```php
-include("/path/to/EasyJax.php"); 
+include("server/EasyJax.php"); 
 
 $easyj = new EasyJax();
 $easyj -> set_ret_data("returned_text",$easyj -> getData('echo_me'));
@@ -83,9 +83,20 @@ $(document).ready(function(){
 ##Server Side##
 
 ```php
-include("/path/to/EasyJaxFiles.php");
+include("server/EasyJaxFiles.php");
 
 $ejf = new EasyJaxFiles();
 $ejf -> downloadTo("/tmp/");
 $ejf -> send_resp();
+```
+
+Additionally, server/EasyJaxFiles.js is an includable file for use with node.js and Express:
+
+```javascript
+var EasyJaxFiles = require("server/EasyJaxFiles.js");
+
+router.post("/upload/",function(req,res){
+	var ejf = new EasyJaxFiles(req,res);
+	ejf.downloadTo("/tmp/");
+});
 ```
