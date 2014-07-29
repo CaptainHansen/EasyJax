@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2013 Stephen Hansen (www.hansencomputers.com)
- * 
+ *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
@@ -12,7 +12,7 @@
 
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
  * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -20,7 +20,7 @@
  * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE. 
+ * OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /** EasyJax Javascript class
@@ -41,6 +41,7 @@ function EasyJax (Url,req_type,runOnSuccess,post_obj){
   this.req_type = req_type;
   this.aes = false;
   this.enc;
+  this.csrf;
 
   this.success = function (data, post_obj) {
     if(runOnSuccess == undefined)
@@ -65,10 +66,10 @@ function EasyJax (Url,req_type,runOnSuccess,post_obj){
   }
 
   this.r = false; //response - for debugging purposes
-  
+
   this.send = function (){
     if(window.XMLHttpRequest) {
-      this.xmlHttp = new XMLHttpRequest(); 
+      this.xmlHttp = new XMLHttpRequest();
     } else {
       this.xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
     }
@@ -78,13 +79,16 @@ function EasyJax (Url,req_type,runOnSuccess,post_obj){
 
     this.xmlHttp.open( this.req_type, this.Url, true );
     this.xmlHttp.setRequestHeader("Content-Type","application/json; charset=ISO-8859-1");
+    if (this.csrf) {
+      this.xmlHttp.setRequestHeader("X-CSRF-Token", this.csrf);
+    }
     this.xmlHttp.send(JSON.stringify(this.post_obj));
   }
-  
+
   this.push = function(id,val){
     this.post_obj[id] = val;
   }
-  
+
   this.createCallback = function (){
     var aes = this.aes;
     var x = this.xmlHttp;
