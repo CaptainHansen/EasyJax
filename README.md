@@ -10,23 +10,25 @@ A simple implementation of an AJAX echo is as easy as this:
 ##Client Side##
 
 ```javascript
-function send_data(text_to_echo){
+function send_data (text_to_echo) {
 	//last argument in constructor is a callback function which is called if the EasyJax server-side script returns a 200 status code
-	easyj = new EasyJax('/easyjax.php','POST',function(data) {
-		alert(data.returned_text);
-	},{'echo_me':text_to_echo});
+	var ej = new EasyJax('/easyjax.php','POST');
+	ej.on('success',function (data) {
+		alert(data.text);
+	});
 
-	easyj.submit_data();
+	ej.push('echo_me', text_to_echo);
+	ej.send();
 }
 ```
 
-##Server Side##
+##Server Side (PHP)##
 
 ```php
 include("server/EasyJax.php"); 
 
 $easyj = new EasyJax();
-$easyj -> set_ret_data("returned_text",$easyj -> getData('echo_me'));
+$easyj -> set_ret_data("text",$easyj -> getData('echo_me'));
 $easyj -> send_resp();
 ```
 
@@ -80,17 +82,17 @@ $(document).ready(function(){
 });
 ```
 
-##Server Side##
+##Server Side (PHP)##
 
 ```php
-include("server/EasyJaxFiles.php");
+include("server/php/EasyJaxFiles.php");
 
 $ejf = new EasyJaxFiles();
 $ejf -> downloadTo("/tmp/");
 $ejf -> send_resp();
 ```
 
-Additionally, server/EasyJaxFiles.js is an includable file for use with node.js and Express:
+Additionally, server/express/EasyJaxFiles.js is an includable file for use with node.js and Express:
 
 ```javascript
 var EasyJaxFiles = require("server/EasyJaxFiles.js");
