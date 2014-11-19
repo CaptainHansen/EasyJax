@@ -30,26 +30,25 @@
  * it is announced using the alert() function
  */
 
-function EasyJax (Url,req_type,runOnSuccess,post_obj){
+function EasyJax (Url,req_type,runOnSuccess,tx){
   this.Url = Url;
-  if(post_obj == undefined){
-    this.post_obj = {};
+  if(tx == undefined){
+    this.tx = {};
   } else {
-    this.post_obj = post_obj;
+    this.tx = tx;
   }
   this.xmlHttp;
   this.req_type = req_type;
   this.aes = false;
   this.enc;
   this.csrf;
+  this.ignoreRequestTrigger = false;
 
-  this.success = function (data, post_obj) {
-    if(runOnSuccess == undefined)
-      return false;
-    else
-      runOnSuccess (data, post_obj);
+  if(runOnSuccess != undefined) {
+    this.success = function () {
+      runOnSuccess(this.rx, this.tx);
+    }
   }
-  this.error = function(data) { alert(data.error); }
 
   this.on = function(e,fn){
     switch(e){
@@ -75,34 +74,36 @@ function EasyJax (Url,req_type,runOnSuccess,post_obj){
     }
 
     //data is a JSON data package returned to the client from the server.
-    this.xmlHttp.onreadystatechange = this.createCallback();
+    this.xmlHttp.onreadystatechange = this._createCallback();
 
     this.xmlHttp.open( this.req_type, this.Url, true );
-    this.xmlHttp.setRequestHeader("Content-Type","application/json; charset=ISO-8859-1");
+    this.xmlHttp.setRequestHeader("Content-Type","application/json; charset=utf-8");
     if (this.csrf) {
       this.xmlHttp.setRequestHeader("X-CSRF-Token", this.csrf);
     }
-    this.xmlHttp.send(JSON.stringify(this.post_obj));
+    this.xmlHttp.send(JSON.stringify(this.tx));
   }
 
   this.push = function(id,val){
-    this.post_obj[id] = val;
+    this.tx[id] = val;
+    return this;
   }
 
-  this.createCallback = function (){
+  this._createCallback = function (){
     var aes = this.aes;
     var x = this.xmlHttp;
     var ej = this;
-    var pobj = this.post_obj;
     return function (){
       if(x.readyState == 4) {
         switch(x.status) {
         case 200:
+          if(typeof EasyJax.requestTrigger == 'function' && !ej.ignoreRequestTrigger)
+            EasyJax.requestTrigger();
           var response = x.response;
           try {
             var data = JSON.parse(response);
           } catch(err){
-            ej.r = response;
+            ej.rx = response;
             if(aes != false){
               alert("There was an error decrypting and/or parsing response.\n\n"+x.response);
             } else {
@@ -111,16 +112,14 @@ function EasyJax (Url,req_type,runOnSuccess,post_obj){
             return 1;
           }
 
-          ej.r = data;
+          ej.rx = data;
 
           if(data.error != undefined && data.error != ""){
-            ej.error(data,pobj);
+            ej.error(ej.rx, ej.tx);
             return 1;
-          } else if(ej.success) {
-            ej.success(data,pobj);
-            return 0;
           } else {
-            alert(ej.success);
+            ej.success(ej.rx, ej.tx);
+            return 0;
           }
           break;
         default:
@@ -130,3 +129,6 @@ function EasyJax (Url,req_type,runOnSuccess,post_obj){
     }
   }
 }
+
+EasyJax.prototype.success = function () { alert("Success!"); }
+EasyJax.prototype.error = function() { alert(this.rx.error); }
