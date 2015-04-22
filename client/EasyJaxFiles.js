@@ -196,7 +196,7 @@ function EasyJaxFiles (Url,req_type){
       eventSource.addEventListener("progress", (function(ejf) {
         return function(e){
           var s = {
-            'position' : e.position || e.loaded,
+            'position' : e.loaded || e.position,
             'total' : file.size,
             'num_files' : ejf.files.length,
             'current_file' : ejf.files_index+1,

@@ -1,26 +1,26 @@
-// EasyJaxFiles public class
-// Written by Stephen Hansen, Copyright of Hansen Computers LLC,  2013
-// Used to Upload data from a browser to the server asynchronously.
-// License: MIT
+/** EasyJaxFiles public class
+ * 
+ * Written by Stephen Hansen, Copyright of Hansen Computers LLC,  2013
+ * Used to Upload data from a browser to the server asynchronously.
+ * 
+ * License: MIT
+ */
 
 var fs = require("fs");
 
-function EasyJaxFiles(req,res) {
+function EasyJaxFiles (req, res) {
 	this.req = req;
 	this.res = res;
 
-	this.return_data = {"error":""};
-	this.path = req.url;	//$this -> path = $_SERVER['PATH_INFO'];
+	this.tx = {"error": ""};
 	this.req_method = req.method.toUpperCase();
-
-	this.exts = [];
 	
 	//this.read = 0;
 	this.write = null;
 	this.overw = null;
 
-	this.finishSeg = function(floc){ this.send_resp(); }
-	this.finishFile = function(floc){ this.send_resp(); }
+	this.finishSeg = function (floc) { this.send(); }
+	this.finishFile = function (floc) { this.send(); }
 
 	this.on = function(evt,fn){
 		switch(evt){
@@ -34,20 +34,18 @@ function EasyJaxFiles(req,res) {
 		default:
 			throw new Error(evt+" is not a recognized event for EasyJaxFiles.");
 		}
+		return this;
 	}
 	
-	this.downloadTo = function(folder){
-		if(folder === undefined) folder = "/tmp";
-		var dloc = folder+this.path;
-		var ms = dloc.match(/^(.+)\/[^\/]+$/);
-		var dest = ms[1];
+	this.downloadTo = function (dest) {
+		if(dest === undefined) dest = "/tmp";
+		var file = req.headers["ejf-file"];
+		var dloc = dest+"/"+file;
+
+		ms = dloc.match(/\/([^\/]+)$/);
+		this.push('name',ms[1]);
 
 		var stat;
-
-//		this.read = new SlowBuffer(); //$this -> read = fopen('php://input', "r");
-		ms = dloc.match(/\/([^\/]+)$/);
-		this.set_ret_data('name',ms[1]);
-
 		try {
 			stat = fs.statSync(dest);
 			if(!stat.isDirectory()){
@@ -61,9 +59,9 @@ function EasyJaxFiles(req,res) {
 
 		try {
 			stat = fs.statSync(dloc);
-			this.set_ret_data('overw',true);
+			this.push('overw',true);
 		} catch(e){
-			this.set_ret_data('overw',false);
+			this.push('overw',false);
 			stat = false;
 		}
 
@@ -87,48 +85,37 @@ function EasyJaxFiles(req,res) {
 
 		var p = req.pipe(this.write);
 
-/*		
-		while(true) {
-			$buffer = fgets($this -> read, 4096);
-			if (strlen($buffer) == 0) {
-				fclose($this -> read);
-				fclose($this -> write);
-				break;
-			}
-			fwrite($this -> write, $buffer);
-		}
-		*/
+		var self = this;
 		if(this.req.get("EJF-Final") == 'YES'){
-			p.on('finish',(function(file,ejf){
-				return function(){ ejf.finishFile.call(ejf,file); };
-			})(dloc,this));
+			p.on('finish',function () {
+				self.finishFile(dloc);
+			});
 			return dloc;
 		} else {
-			p.on('finish',(function(file,ejf){
-				return function(){ ejf.finishSeg.call(ejf,file); };
-			})(dloc,this));
-			this.send_resp();
+			p.on('finish',function () {
+				self.finishSeg(dloc);
+			});
 			return false;
 		}
 	}
 	
-	this.set_ret_data = function(key,data){
-		this.return_data[key] = data;
+	this.push = function (key, data) {
+		this.tx[key] = data;
+		return this;
 	}
 	
-	this.add_error_msg = function(msg){
-		this.return_data['error'] += msg+'\n';
+	this.add_error_msg = function (msg) {
+		this.tx.error += msg+'\n';
 	}
 
 	/////Returning data to client
-	this.send_resp = function(error){
+	this.send = function (error) {
 		if(error != undefined) this.add_error_msg(error);
 		this.res.header({
 			"Pragma": "no-chache",
 			"Expires": "Thu, 01 Dec 1997 16:00:00 GMT"
 		});
-		this.res.send(this.return_data);
-		//die......
+		this.res.json(this.tx);
 	}
 }
 

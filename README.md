@@ -12,17 +12,27 @@ A simple implementation of an AJAX echo is as easy as this:
 ```javascript
 function send_data (text_to_echo) {
 	//last argument in constructor is a callback function which is called if the EasyJax server-side script returns a 200 status code
+	
 	var ej = new EasyJax('/easyjax.php','POST');
-	ej.on('success',function (data) {
-		alert(data.text);
-	});
-
-	ej.push('echo_me', text_to_echo);
+	ej.on('success',function () {
+		alert(this.rx.text);
+	})
+	.push('echo_me', text_to_echo)
 	ej.send();
 }
 ```
 
-##Server Side (PHP)##
+##Server Side (Node.js + ExpressJS)##
+
+```javascript
+app.use(function (req, res, next) {
+	res.json({
+		text: req.body.echo_me
+	});
+});
+```
+
+##Server Side (PHP, deprecated)##
 
 ```php
 include("server/EasyJax.php"); 
@@ -82,7 +92,18 @@ $(document).ready(function(){
 });
 ```
 
-##Server Side (PHP)##
+##Server Side (Node.js + ExpressJS)##
+
+```javascript
+var EasyJaxFiles = require("server/EasyJaxFiles.js");
+
+router.post("/upload/",function (req, res) {
+	var ejf = new EasyJaxFiles (req, res);
+	ejf.downloadTo("/tmp/");
+});
+```
+
+##Server Side (PHP, deprecated)##
 
 ```php
 include("server/php/EasyJaxFiles.php");
@@ -90,15 +111,4 @@ include("server/php/EasyJaxFiles.php");
 $ejf = new EasyJaxFiles();
 $ejf -> downloadTo("/tmp/");
 $ejf -> send_resp();
-```
-
-Additionally, server/express/EasyJaxFiles.js is an includable file for use with node.js and Express:
-
-```javascript
-var EasyJaxFiles = require("server/EasyJaxFiles.js");
-
-router.post("/upload/",function(req,res){
-	var ejf = new EasyJaxFiles(req,res);
-	ejf.downloadTo("/tmp/");
-});
 ```
