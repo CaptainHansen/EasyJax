@@ -7,27 +7,19 @@
  * License: MIT
  */
 
-function EasyJax (Url,req_type,runOnSuccess,tx){
+function EasyJax (Url, req_type) {
   this.Url = Url;
-  if(tx == undefined){
-    this.tx = {};
-  } else {
-    this.tx = tx;
-  }
-  this.xmlHttp;
+  this.tx = {};
+  this.rx = {};
+  this._xmlHttp;
   this.req_type = req_type;
   this.aes = false;
   this.enc;
   this.csrf;
   this.ignoreRequestTrigger = false;
+  this._longLoadTimeout = false;
 
-  if(runOnSuccess != undefined) {
-    this.success = function () {
-      runOnSuccess(this.rx, this.tx);
-    }
-  }
-
-  this.on = function(e,fn){
+  this.on = function (e, fn) {
     switch(e){
       case "error":
         this.error = fn;
@@ -41,24 +33,27 @@ function EasyJax (Url,req_type,runOnSuccess,tx){
     return this;
   }
 
-  this.r = false; //response - for debugging purposes
-
-  this.send = function (){
+  this.send = function () {
     if(window.XMLHttpRequest) {
-      this.xmlHttp = new XMLHttpRequest();
+      this._xmlHttp = new XMLHttpRequest();
     } else {
-      this.xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+      this._xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
     }
 
-    //data is a JSON data package returned to the client from the server.
-    this.xmlHttp.onreadystatechange = this._createCallback();
+    this._xmlHttp.onreadystatechange = this._createCallback();
 
-    this.xmlHttp.open( this.req_type, this.Url, true );
-    this.xmlHttp.setRequestHeader("Content-Type","application/json; charset=utf-8");
+    this._xmlHttp.open( this.req_type, this.Url, true );
+    this._xmlHttp.setRequestHeader("X-Requested-With","XMLHttpRequest");
+    this._xmlHttp.setRequestHeader("Content-Type","application/json; charset=utf-8");
     if (this.csrf) {
-      this.xmlHttp.setRequestHeader("X-CSRF-Token", this.csrf);
+      this._xmlHttp.setRequestHeader("X-CSRF-Token", this.csrf);
     }
-    this.xmlHttp.send(JSON.stringify(this.tx));
+    this._xmlHttp.send(JSON.stringify(this.tx));
+
+    var self = this;
+    this._longLoadTimeout = setTimeout(function () {
+      self.longLoad();
+    }, 1000);
   }
 
   this.push = function(id,val){
@@ -66,41 +61,37 @@ function EasyJax (Url,req_type,runOnSuccess,tx){
     return this;
   }
 
-  this._createCallback = function (){
-    var aes = this.aes;
-    var x = this.xmlHttp;
-    var ej = this;
+  this._createCallback = function () {
+    var self = this;
     return function (){
-      if(x.readyState == 4) {
-        switch(x.status) {
-        case 200:
-          if(typeof EasyJax.requestTrigger == 'function' && !ej.ignoreRequestTrigger)
-            EasyJax.requestTrigger();
-          var response = x.response;
+      if(this.readyState == 4) {
+        if(this.response != "") {
           try {
-            var data = JSON.parse(response);
-          } catch(err){
-            ej.rx = response;
-            if(aes != false){
-              alert("There was an error decrypting and/or parsing response.\n\n"+x.response);
-            } else {
-              alert("There was an error parsing JSON data.  Response Text shown below:\n\n"+x.response);
-            }
-            return 1;
+            self.rx = JSON.parse(this.response);
+          } catch (err) {
+            self.rx = this.response;
           }
+        }
 
-          ej.rx = data;
+        if (this.status == 0) {
+          self.rx = "Connection error";
+        } else {
+          if(typeof EasyJax.requestTrigger == 'function' && !self.ignoreRequestTrigger)
+            EasyJax.requestTrigger();
+        }
 
-          if(data.error != undefined && data.error != ""){
-            ej.error(ej.rx, ej.tx);
-            return 1;
-          } else {
-            ej.success(ej.rx, ej.tx);
-            return 0;
+        clearTimeout(self._longLoadTimeout);
+        self.longLoadEnd();
+
+        if (this.status >= 100 && this.status < 400) {
+          return self.success();
+        }
+
+        if (this.status >= 400 || this.status < 100) {
+          if(typeof self.rx == "string") {
+            self.rx = {error: self.rx};
           }
-          break;
-        default:
-          alert("Status code "+x.status+" - "+x.statusText+".");
+          return self.error();
         }
       }
     }
@@ -108,4 +99,6 @@ function EasyJax (Url,req_type,runOnSuccess,tx){
 }
 
 EasyJax.prototype.success = function () { alert("Success!"); }
-EasyJax.prototype.error = function() { alert(this.rx.error); }
+EasyJax.prototype.error = function () { alert(this.rx.error); }
+EasyJax.prototype.longLoad = function () {}
+EasyJax.prototype.longLoadEnd = function () {}
